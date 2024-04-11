@@ -11,11 +11,8 @@ let db = new Sequelize('database', 'username', undefined, {
     storage: "./totally_not_my_privateKeys.db",
 });
 // "secant"
-const ENV_KEY_KEY = "1290690F78CD5B71242F1F6975BAAD23";
-const ENV_KEY_SALT = "C89D365D56929093";
-const ENV_KEY_IV = "DAEDCE624C0602C09D8F1ECC8019F725";
+const ENV_KEY_KEY = process.env.NOT_MY_KEY ?? "1290690F78CD5B71242F1F6975BAAD23";
 const envKeyObj = await subtle.importKey("raw", Buffer.from(ENV_KEY_KEY, 'utf8'), { name: 'AES-CBC' }, false, ['encrypt', 'decrypt']);
-const envIvBuf = Buffer.from(ENV_KEY_SALT, 'utf8');
 const keys = db.define('keys', {
     kid: {
         type: DataTypes.INTEGER,
@@ -109,7 +106,7 @@ async function generateJWT(expired = false) {
     // Insert into Database
     // This needs to be encrypted!
     let keyExportBuffer = await subtle.exportKey("raw", key);
-    let encryptedKeyExportBuffer = Buffer.from(await subtle.encrypt({ name: "AES-CBC", iv: envIvBuf }, envKeyObj, keyExportBuffer));
+    let encryptedKeyExportBuffer = Buffer.from(await subtle.encrypt({ name: "AES-CBC" }, envKeyObj, keyExportBuffer));
     // INSERT INTO keys (key, exp) VALUES(@key, @exp)
     keys.create({
         key: encryptedKeyExportBuffer,
